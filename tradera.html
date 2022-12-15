@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>torimg</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        img {
+            display: block;
+        }
+    </style>
+
+    <script>
+        const fetchImages = async function () {
+            document.getElementById('imageDiv').innerHTML = "";
+
+            const response = await fetch(`https://api.allorigins.win/raw?url=${document.getElementById('urlInput').value}`);
+            const data = await response.text();
+
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(data, 'text/html');
+            console.log(data.search('<!DOCTYPE html>'));
+
+            // is desktop view
+            const images = data.match(/https\:\/\/img.tradera.net\/images(.*?).jpg/g);
+            const uniqueImages = [...new Set(images)];
+
+            console.log(uniqueImages);
+
+            for (let image of uniqueImages) {
+                const img = document.createElement('img');
+                img.src = image;
+                document.getElementById('imageDiv').appendChild(img);
+            }
+
+            document.getElementById("urlInput").value = "";
+        }
+    </script>
+</head>
+
+<body>
+    <input id="urlInput" type="text" size="50" placeholder="Tradera URL" />
+    <button type="submit" onclick="fetchImages()">Get images</button>
+    <div id="imageDiv"></div>
+</body>
+
+</html>
