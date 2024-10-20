@@ -18,40 +18,51 @@
     </style>
 
     <script>
-        const fetchImages = async function () {
-            document.getElementById('imageDiv').innerHTML = "";
+        const useQueryUrl = function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            const url = urlParams.get('url');
 
-            const response = await fetch(`https://api.allorigins.win/raw?url=${document.getElementById('urlInput').value}`);
-            const data = await response.text();
-
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(data, 'text/html');
-            console.log(data.search('<!DOCTYPE html>'));
-
-            if (data.search('<!DOCTYPE html>')) {
-                // is desktop view
-                const thumbs = doc.getElementById('thumbs').getElementsByTagName('img');
-
-                console.log(thumbs);
-
-                for (let thumb of thumbs) {
-                    const img = document.createElement('img');
-                    img.src = thumb.src.replace('rule=thumbs', 'rule=original');
-                    document.getElementById('imageDiv').appendChild(img);
-                }
-            } else {
-                // is mobile view
-                const thumbs = doc.getElementsByClassName('vi-img-ul')[0].getElementsByTagName('a');
-
-                console.log(thumbs);
-
-                for (let thumb of thumbs) {
-                    const img = document.createElement('img');
-                    img.src = thumb.href.replace('rule=mview', 'rule=original');
-                    document.getElementById('imageDiv').appendChild(img);
-                }
+            if (url) {
+                document.getElementById('urlInput').value = url;
+                fetchImages();
             }
+        }
 
+        window.onload = function () {
+            useQueryUrl();
+        }
+
+        const fetchImages = async function () {
+            try {
+                document.getElementById('status').innerHTML = 'Loading...';
+
+                document.getElementById('imageDiv').innerHTML = '';
+
+                const response = await fetch(`https://proxy.cors.sh/${document.getElementById('urlInput').value}`);
+                if (!response.ok) throw new Error('Fetch response not ok', {cause: response});
+
+                const data = await response.text();
+
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(data, 'text/html');
+
+                const thumbs = doc.querySelectorAll('img[alt=Kuvagalleria]');
+
+                console.log(thumbs);
+
+                for (let thumb of thumbs) {
+                    const img = document.createElement('img');
+
+                    const match = thumb.srcset.match(/(.*?) /)[0];
+                    img.src = match;
+
+                    document.getElementById('imageDiv').appendChild(img);
+                }
+
+                document.getElementById('status').innerHTML = `OK, ${thumbs.length} images`;
+            } catch (error) {
+                document.getElementById('status').innerHTML = error;
+            }
         }
     </script>
 </head>
@@ -59,6 +70,7 @@
 <body>
     <input id="urlInput" type="text" size="50" placeholder="Tori.fi URL" />
     <button type="submit" onclick="fetchImages()">Get images</button>
+    <p id="status"></p>
     <div id="imageDiv"></div>
 </body>
 
